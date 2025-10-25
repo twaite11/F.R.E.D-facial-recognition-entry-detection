@@ -11,9 +11,9 @@ import subprocess
 import sys
 import requests
 from dotenv import load_dotenv
-# --- TensorRT/GPU-accelerated detector ---
 import torch
 from facenet_pytorch import MTCNN
+import gc
 
 load_dotenv()
 
@@ -70,7 +70,7 @@ def send_alert(message_body, frame_to_send):
         else: print(f"[ERROR] Failed to send Discord alert: {response.status_code} {response.text}")
     except Exception as e: print(f"[ERROR] Failed to send Discord alert: {e}")
 
-# --- Helper Functions (No changes here) ---
+# --- Helper Functions ---
 def speak(text, sound_file=GREETING_SOUND_FILE):
     global display_message
     display_message = text
@@ -163,7 +163,7 @@ if __name__ == "__main__":
             status_bar_height = 60
             cv2.rectangle(frame, (0, h - status_bar_height), (w, h), (0,0,0), -1)
 
-            # --- MODIFIED: Use new MTCNN detector. No resize needed! ---
+            # --- MODIFIED: Use new MTCNN detector ---
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             # Detect faces with MTCNN
@@ -237,7 +237,6 @@ if __name__ == "__main__":
                 if recognized_names:
                     prefixed_names = [f"master {name}" for name in recognized_names]
 
-                    # --- BUG FIX: Ensure names_str is defined for both cases ---
                     if len(prefixed_names) > 1:
                         names_str = ", ".join(prefixed_names[:-1]) + f" and {prefixed_names[-1]}"
                     else:
@@ -264,6 +263,13 @@ if __name__ == "__main__":
             cv2.putText(frame, display_message, (15, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             cv2.imshow("Security Feed", frame)
+            ## caching issue hotfix
+            if device.type == 'cuda':
+                torch.cuda.empty_cache()
+                print('i am here')
+
+            gc.collect()
+
             if cv2.waitKey(1) & 0xFF == ord("q"): break
 
     finally:

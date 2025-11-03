@@ -27,10 +27,10 @@ try:
         color_image = np.asanyarray(color_frame.get_data())
 
         # Display the resulting frame
-        cv2.imshow('RealSense Camera Test', color_image)
-        
+        cv2.imshow("RealSense Camera Test", color_image)
+
         # Press 'q' to exit the loop
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if cv2.waitKey(1) & 0xFF == ord("q"):
             break
 
 finally:
@@ -38,4 +38,3 @@ finally:
     print("[INFO] Stopping camera stream.")
     pipeline.stop()
     cv2.destroyAllWindows()
-

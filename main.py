@@ -26,7 +26,7 @@ FACE_RECOGNITION_TOLERANCE = 0.6
 GREETING_SOUND_FILE = "greeting.mp3"
 ENROLLMENT_SOUND_FILE = "enroll.mp3"
 UNKNOWN_FACE_TIMER_SECONDS = 3.0
-DISCORD_WEBHOOK_URL = os.environ.get('DISCORD_WEBHOOK_URL')
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
 # --- State Variables ---
 last_greeting_time = 0
@@ -38,15 +38,16 @@ display_message = "System Initializing..."
 
 # --- NEW: Initialize GPU-accelerated face detector ---
 print("[INFO] Loading GPU-accelerated face detector (MTCNN)...")
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f"[INFO] Running on device: {device}")
 mtcnn = MTCNN(
-    keep_all=True,        # Find all faces, not just the one with highest probability
-    min_face_size=20,     # Don't find tiny faces
-    thresholds=[0.6, 0.7, 0.7], # Confidence thresholds
-    post_process=False,   # We'll do our own post-processing
-    device=device
+    keep_all=True,  # Find all faces, not just the one with highest probability
+    min_face_size=20,  # Don't find tiny faces
+    thresholds=[0.6, 0.7, 0.7],  # Confidence thresholds
+    post_process=False,  # We'll do our own post-processing
+    device=device,
 )
+
 
 # --- Discord Alert Function ---
 def send_alert(message_body, frame_to_send):
@@ -58,17 +59,21 @@ def send_alert(message_body, frame_to_send):
         snapshot_filename = "latest_alert.jpg"
         snapshot_path = os.path.join(SNAPSHOT_PATH, snapshot_filename)
         cv2.imwrite(snapshot_path, frame_to_send)
-        print(f"[INFO] Sending Discord alert...")
-        with open(snapshot_path, 'rb') as f:
-            files = {'file': (snapshot_filename, f, 'image/jpeg')}
+        print("[INFO] Sending Discord alert...")
+        with open(snapshot_path, "rb") as f:
+            files = {"file": (snapshot_filename, f, "image/jpeg")}
             response = requests.post(
-                DISCORD_WEBHOOK_URL,
-                data={'content': message_body},
-                files=files
+                DISCORD_WEBHOOK_URL, data={"content": message_body}, files=files
             )
-        if 200 <= response.status_code < 300: print(f"[SUCCESS] Discord alert sent.")
-        else: print(f"[ERROR] Failed to send Discord alert: {response.status_code} {response.text}")
-    except Exception as e: print(f"[ERROR] Failed to send Discord alert: {e}")
+        if 200 <= response.status_code < 300:
+            print("[SUCCESS] Discord alert sent.")
+        else:
+            print(
+                f"[ERROR] Failed to send Discord alert: {response.status_code} {response.text}"
+            )
+    except Exception as e:
+        print(f"[ERROR] Failed to send Discord alert: {e}")
+
 
 # --- Helper Functions ---
 def speak(text, sound_file=GREETING_SOUND_FILE):
@@ -76,10 +81,12 @@ def speak(text, sound_file=GREETING_SOUND_FILE):
     display_message = text
     print(f"[AI-VOICE] {text}")
     try:
-        tts = gTTS(text=text, lang='en')
+        tts = gTTS(text=text, lang="en")
         tts.save(sound_file)
         subprocess.run(["mpg123", "-q", sound_file], check=True)
-    except Exception as e: print(f"Error in text-to-speech: {e}")
+    except Exception as e:
+        print(f"Error in text-to-speech: {e}")
+
 
 def listen_for_name():
     r = sr.Recognizer()
@@ -96,8 +103,12 @@ def listen_for_name():
             return name
         except (sr.WaitTimeoutError, sr.UnknownValueError, sr.RequestError) as e:
             print(f"[ERROR] Could not recognize name: {e}")
-            speak("I'm sorry, I could not understand that. Walk out of frame, then walk back in to restart.", ENROLLMENT_SOUND_FILE)
+            speak(
+                "I'm sorry, I could not understand that. Walk out of frame, then walk back in to restart.",
+                ENROLLMENT_SOUND_FILE,
+            )
             return None
+
 
 def enroll_new_person(frame, pipeline):
     global auto_enrollment_in_progress, display_message
@@ -111,33 +122,44 @@ def enroll_new_person(frame, pipeline):
             auto_enrollment_in_progress = False
             return
         person_path = os.path.join(DATASET_PATH, person_name)
-        if not os.path.exists(person_path): os.makedirs(person_path)
+        if not os.path.exists(person_path):
+            os.makedirs(person_path)
         img_counter = len([name for name in os.listdir(person_path)])
         img_name = f"{person_name}_{img_counter:04d}.jpg"
         img_path = os.path.join(person_path, img_name)
         cv2.imwrite(img_path, frame)
-        speak(f"Thank you, {person_name}. I have saved your profile.", ENROLLMENT_SOUND_FILE)
+        speak(
+            f"Thank you, {person_name}. I have saved your profile.",
+            ENROLLMENT_SOUND_FILE,
+        )
         speak("Updating database and restarting. One moment.", ENROLLMENT_SOUND_FILE)
         try:
             subprocess.run([sys.executable, "encode_faces.py"], check=True)
             print("[AUTO-SYSTEM] Face encoding complete.")
-        except subprocess.CalledProcessError as e:
-            speak("Error updating database. Please restart manually.", ENROLLMENT_SOUND_FILE)
+        except subprocess.CalledProcessError:
+            speak(
+                "Error updating database. Please restart manually.",
+                ENROLLMENT_SOUND_FILE,
+            )
             auto_enrollment_in_progress = False
             return
         print("[AUTO-SYSTEM] Restarting the main application...")
         print("[INFO] Releasing camera hardware...")
         pipeline.stop()
-        os.execv(sys.executable, ['python'] + sys.argv)
+        os.execv(sys.executable, ["python"] + sys.argv)
     auto_enrollment_in_progress = False
     display_message = "Monitoring..."
 
+
 # --- Main Application ---
 if __name__ == "__main__":
-    if not os.path.exists(SNAPSHOT_PATH): os.makedirs(SNAPSHOT_PATH)
+    if not os.path.exists(SNAPSHOT_PATH):
+        os.makedirs(SNAPSHOT_PATH)
     print("[INFO] Loading face encodings...")
-    if not os.path.exists(ENCODINGS_PATH): data = {"encodings": [], "names": []}
-    else: data = pickle.loads(open(ENCODINGS_PATH, "rb").read())
+    if not os.path.exists(ENCODINGS_PATH):
+        data = {"encodings": [], "names": []}
+    else:
+        data = pickle.loads(open(ENCODINGS_PATH, "rb").read())
 
     print("[INFO] Starting RealSense camera...")
     pipeline = rs.pipeline()
@@ -156,12 +178,13 @@ if __name__ == "__main__":
 
             frames = pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
-            if not color_frame: continue
+            if not color_frame:
+                continue
 
             frame = np.asanyarray(color_frame.get_data())
             h, w, _ = frame.shape
             status_bar_height = 60
-            cv2.rectangle(frame, (0, h - status_bar_height), (w, h), (0,0,0), -1)
+            cv2.rectangle(frame, (0, h - status_bar_height), (w, h), (0, 0, 0), -1)
 
             # --- MODIFIED: Use new MTCNN detector ---
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -176,9 +199,7 @@ if __name__ == "__main__":
                     l, t, r, b = [int(val) for val in box]
                     boxes.append((t, r, b, l))
 
-
             encodings = face_recognition.face_encodings(rgb_frame, boxes)
-
 
             names_for_display = []
             unknown_person_present = False
@@ -187,7 +208,11 @@ if __name__ == "__main__":
             for encoding in encodings:
                 name = "Unknown"
                 if data["encodings"]:
-                    matches = face_recognition.compare_faces(data["encodings"], encoding, tolerance=FACE_RECOGNITION_TOLERANCE)
+                    matches = face_recognition.compare_faces(
+                        data["encodings"],
+                        encoding,
+                        tolerance=FACE_RECOGNITION_TOLERANCE,
+                    )
                     if True in matches:
                         matched_idxs = [i for (i, b) in enumerate(matches) if b]
                         counts = {}
@@ -197,7 +222,8 @@ if __name__ == "__main__":
                         name = max(counts, key=counts.get)
 
                 names_for_display.append(name)
-                if name == "Unknown": unknown_person_present = True
+                if name == "Unknown":
+                    unknown_person_present = True
                 current_persons_in_frame.add(name)
 
             time_since_last_greeting = time.time() - last_greeting_time
@@ -206,11 +232,18 @@ if __name__ == "__main__":
                 if unknown_face_start_time is None:
                     print("[INFO] Unknown person detected. Starting 3-second timer...")
                     unknown_face_start_time = time.time()
-                    display_message = "Unrecognized person detected. Please approach to register."
+                    display_message = (
+                        "Unrecognized person detected. Please approach to register."
+                    )
 
                 elif time.time() - unknown_face_start_time > UNKNOWN_FACE_TIMER_SECONDS:
-                    if time.time() - last_unknown_alert_time > GREETING_COOLDOWN_SECONDS:
-                        print("[INFO] 3-second timer complete. Sending unknown person alert.")
+                    if (
+                        time.time() - last_unknown_alert_time
+                        > GREETING_COOLDOWN_SECONDS
+                    ):
+                        print(
+                            "[INFO] 3-second timer complete. Sending unknown person alert."
+                        )
                         alert_time = time.strftime("%I:%M %p")
                         message = f"Unrecognized person detected at {alert_time}."
                         send_alert(message, frame)
@@ -223,27 +256,41 @@ if __name__ == "__main__":
                         continue
             else:
                 if unknown_face_start_time is not None:
-                    print("[INFO] Unknown person no longer detected or is not alone. Resetting timer.")
+                    print(
+                        "[INFO] Unknown person no longer detected or is not alone. Resetting timer."
+                    )
                 unknown_face_start_time = None
 
             if not current_persons_in_frame:
-                if greeted_persons_this_session: greeted_persons_this_session.clear()
+                if greeted_persons_this_session:
+                    greeted_persons_this_session.clear()
                 display_message = "Monitoring..."
 
-            if current_persons_in_frame and time_since_last_greeting > GREETING_COOLDOWN_SECONDS:
-                newly_seen_persons = current_persons_in_frame - greeted_persons_this_session
-                recognized_names = [name for name in newly_seen_persons if name != "Unknown"]
+            if (
+                current_persons_in_frame
+                and time_since_last_greeting > GREETING_COOLDOWN_SECONDS
+            ):
+                newly_seen_persons = (
+                    current_persons_in_frame - greeted_persons_this_session
+                )
+                recognized_names = [
+                    name for name in newly_seen_persons if name != "Unknown"
+                ]
 
                 if recognized_names:
                     prefixed_names = [f"master {name}" for name in recognized_names]
 
                     if len(prefixed_names) > 1:
-                        names_str = ", ".join(prefixed_names[:-1]) + f" and {prefixed_names[-1]}"
+                        names_str = (
+                            ", ".join(prefixed_names[:-1])
+                            + f" and {prefixed_names[-1]}"
+                        )
                     else:
-                        names_str = prefixed_names[0] # Define names_str for a single person
+                        names_str = prefixed_names[
+                            0
+                        ]  # Define names_str for a single person
 
                     greeting = f"Welcome, {names_str}."
-
 
                     speak(greeting)
                     last_greeting_time = time.time()
@@ -253,27 +300,42 @@ if __name__ == "__main__":
                     send_alert(message, frame)
                     last_unknown_alert_time = time.time()
 
-
             for box_to_display, name_to_display in zip(boxes, names_for_display):
                 # Boxes are already (t, r, b, l)
                 t, r, b, l = box_to_display
                 cv2.rectangle(frame, (l, t), (r, b), (0, 255, 0), 2)
-                cv2.putText(frame, name_to_display, (l, t - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+                cv2.putText(
+                    frame,
+                    name_to_display,
+                    (l, t - 15),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.75,
+                    (0, 255, 0),
+                    2,
+                )
 
-            cv2.putText(frame, display_message, (15, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(
+                frame,
+                display_message,
+                (15, h - 20),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (255, 255, 255),
+                2,
+            )
 
             cv2.imshow("Security Feed", frame)
             ## caching issue hotfix
-            if device.type == 'cuda':
+            if device.type == "cuda":
                 torch.cuda.empty_cache()
-                print('i am here')
+                print("i am here")
 
             gc.collect()
 
-            if cv2.waitKey(1) & 0xFF == ord("q"): break
+            if cv2.waitKey(1) & 0xFF == ord("q"):
+                break
 
     finally:
         print("[INFO] Shutting down...")
         pipeline.stop()
         cv2.destroyAllWindows()
-

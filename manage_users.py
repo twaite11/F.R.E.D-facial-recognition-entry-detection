@@ -80,7 +80,7 @@ def main():
     )
 
     # Create the 'list' command
-    list_parser = subparsers.add_parser("list", help="List all registered users.")
+    # list_parser = subparsers.add_parser("list", help="List all registered users.")
 
     # Create the 'delete' command
     delete_parser = subparsers.add_parser("delete", help="Delete a specific user.")

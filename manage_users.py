@@ -8,6 +8,7 @@ import sys
 DATASET_PATH = "dataset"
 ENCODINGS_PATH = "known_faces.pkl"
 
+
 def list_users():
     """Lists all registered users by their folder names."""
     print("[INFO] Listing all registered users:")
@@ -16,7 +17,11 @@ def list_users():
         return
 
     # Get all items in the dataset path that are directories
-    users = [name for name in os.listdir(DATASET_PATH) if os.path.isdir(os.path.join(DATASET_PATH, name))]
+    users = [
+        name
+        for name in os.listdir(DATASET_PATH)
+        if os.path.isdir(os.path.join(DATASET_PATH, name))
+    ]
 
     if not users:
         print("  No users are currently registered.")
@@ -24,6 +29,7 @@ def list_users():
 
     for user in users:
         print(f"  - {user}")
+
 
 def delete_user(name):
     """Deletes a user's data folder and updates the encodings."""
@@ -37,7 +43,7 @@ def delete_user(name):
     # Use input() to ask for confirmation.
     confirm = input("  Are you sure? (y/n): ").lower().strip()
 
-    if confirm == 'y' or confirm == 'yes':
+    if confirm == "y" or confirm == "yes":
         try:
             # Delete the user's entire folder and all images within
             shutil.rmtree(user_path)
@@ -57,29 +63,42 @@ def delete_user(name):
         except OSError as e:
             print(f"[ERROR] Could not delete user: {e}")
         except subprocess.CalledProcessError:
-            print(f"[ERROR] Failed to update encodings. Please run 'python encode_faces.py' manually.")
+            print(
+                "[ERROR] Failed to update encodings. Please run 'python encode_faces.py' manually."
+            )
     else:
         print("[INFO] Deletion cancelled.")
 
+
 def main():
     # Set up the command-line argument parser
-    parser = argparse.ArgumentParser(description="Manage users for the Home Security System.")
-    subparsers = parser.add_subparsers(dest='command', help='Available commands', required=True)
+    parser = argparse.ArgumentParser(
+        description="Manage users for the Home Security System."
+    )
+    subparsers = parser.add_subparsers(
+        dest="command", help="Available commands", required=True
+    )
 
     # Create the 'list' command
-    list_parser = subparsers.add_parser('list', help='List all registered users.')
+    # list_parser = subparsers.add_parser("list", help="List all registered users.")
 
     # Create the 'delete' command
-    delete_parser = subparsers.add_parser('delete', help='Delete a specific user.')
-    delete_parser.add_argument('--name', type=str, required=True, help='The name of the user to delete (must match folder name).')
+    delete_parser = subparsers.add_parser("delete", help="Delete a specific user.")
+    delete_parser.add_argument(
+        "--name",
+        type=str,
+        required=True,
+        help="The name of the user to delete (must match folder name).",
+    )
 
     args = parser.parse_args()
 
     # Execute the correct function based on the command
-    if args.command == 'list':
+    if args.command == "list":
         list_users()
-    elif args.command == 'delete':
+    elif args.command == "delete":
         delete_user(args.name)
+
 
 if __name__ == "__main__":
     main()

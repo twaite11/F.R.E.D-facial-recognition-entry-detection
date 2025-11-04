@@ -18,20 +18,20 @@ for person_name in os.listdir(dataset_path):
     # Loop over the images of the person
     for image_name in os.listdir(person_path):
         image_path = os.path.join(person_path, image_name)
-        
+
         print(f"[INFO] Processing {image_name} for {person_name}...")
-        
+
         # Load image and convert it from BGR (OpenCV default) to RGB
         image = cv2.imread(image_path)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
+
         # Detect the (x, y)-coordinates of the bounding boxes for each face
         # Using "cnn" is more accurate but slower. "hog" is faster but less accurate.
-        boxes = face_recognition.face_locations(rgb, model="cnn") 
-        
+        boxes = face_recognition.face_locations(rgb, model="cnn")
+
         # Compute the facial embedding for the face
         encodings = face_recognition.face_encodings(rgb, boxes)
-        
+
         # Add each encoding + name to our list of known faces
         for encoding in encodings:
             known_encodings.append(encoding)
@@ -44,4 +44,3 @@ with open("known_faces.pkl", "wb") as f:
     f.write(pickle.dumps(data))
 
 print("[INFO] Encoding complete. The 'known_faces.pkl' file has been created.")
-
